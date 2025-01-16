@@ -1,25 +1,37 @@
 document.querySelector("form").addEventListener("submit", async (e) => {
   e.preventDefault();
-  const id = document.querySelector("#user_id").value;
+  const name = document.querySelector("#user_name").value;
   const title = document.querySelector("#title").value;
   const content = document.querySelector("#content").value;
 
   const body = {
-    id: Number(id),
+    name: name.trim(), // Send the name instead of ID
     title: title,
     content: content,
   };
 
-  const res = await fetch("http://localhost:5002/post", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(body),
-  });
-  const data = await res.json();
-  console.log(data);
-  fetchPosts();
+  try {
+    const res = await fetch("http://localhost:5002/post", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(body),
+    });
+
+    if (res.ok) {
+      alert("Post successfully created!"); // Add alert here
+      fetchPosts(); // Refresh the posts
+      document.querySelector("#user_name").value = ""; // Clear form fields
+      document.querySelector("#title").value = "";
+      document.querySelector("#content").value = "";
+    } else {
+      alert("Failed to create post");
+    }
+  } catch (error) {
+    console.error("Error:", error);
+    alert("An error occurred while creating the post");
+  }
 });
 
 async function fetchComments(postId) {
@@ -70,6 +82,11 @@ function displayPosts(posts) {
       post.created_at
     ).toLocaleString()}</small>
             <div id="comments-${post.id}" class="comments"></div>
+            <input type="text" id="name-input-${post.id}" placeholder="Your name">
+            <input type="text" id="comment-input-${
+              post.id
+            }" placeholder="Write a comment...">
+            <button onclick="addComment(${post.id})">Add Comment</button>
           `;
 
     // View Comments button
@@ -85,3 +102,43 @@ function displayPosts(posts) {
 
 // Fetch posts on page load
 fetchPosts();
+
+async function addComment(postId) {
+  const commentInput = document.querySelector(`#comment-input-${postId}`);
+  const nameInput = document.querySelector(`#name-input-${postId}`);
+  const content = commentInput.value.trim();
+  const userName = nameInput.value.trim(); // Get and trim the user's name
+
+  if (!content || !userName) {
+    alert("Name and Comment cannot be empty!");
+    return;
+  }
+
+  try {
+    // Send the comment to the backend
+    const res = await fetch("http://localhost:5002/comments", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        post_id: postId,
+        user_name: userName,
+        content: content,
+      }),
+    });
+
+    if (res.ok) {
+      alert("Comment added successfully!");
+      commentInput.value = ""; // Clear the input field
+      nameInput.value = ""; // Clear the name field
+      fetchComments(postId); // Reload comments for the post
+    } else {
+      console.error("Failed to add comment");
+    }
+  } catch (error) {
+    console.error("Error:", error);
+  }
+}
+
+window.addComment = addComment;
