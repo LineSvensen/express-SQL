@@ -78,14 +78,14 @@ app.post("/post", async (req, res) => {
   const { name, title, content } = req.body;
 
   try {
-    // Check if the user already exists
     let [user] = await connection.query("SELECT * FROM user WHERE name = ?", [
+      // Check if the user already exists
       name,
     ]);
 
-    // If the user does not exist, insert a new user
     if (user.length === 0) {
       const [newUser] = await connection.query(
+        // If the user does not exist, insert a new user
         "INSERT INTO user (name) VALUES (?)",
         [name]
       );
